@@ -38,7 +38,6 @@
 		"build-ui": "cd src/app/ui && pnpm install && npx cross-env BUILD_STANDALONE=true pnpm run build",
 		"build-ui-only": "pnpm run build-ui && pnpm run copy-ui-dist",
 		"copy-ui-dist": "npx tsx scripts/copy-ui-dist.ts",
-		"prepare": "husky",
 		"start": "node dist/src/app/index.cjs",
 		"dev": "tsc --watch",
 		"typecheck": "tsc --project tsconfig.typecheck.json",
