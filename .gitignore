@@ -67,3 +67,42 @@ env.example.txt
 chroma-data/
 qdrant-data/
 volumes/
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# Package files
+*.tgz
+*.tar.gz
+*.zip
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+
+# Lock files (but keep package-lock.json and pnpm-lock.yaml)
+*.lock
+!package-lock.json
+!pnpm-lock.yaml
+!yarn.lock
+
+# Local test files
+test-*.json
+test-*.js
+test-*.ts
+!test/**/*
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
