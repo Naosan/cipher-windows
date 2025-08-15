@@ -1,4 +1,4 @@
-# Cipher
+# Cipher (Windows Version)
 
 <div align="center">
 
@@ -7,6 +7,8 @@
 <p align="center">
 <em>Memory-powered AI agent framework with MCP integration</em>
 </p>
+
+> **Note**: This is a Windows-compatible fork of the original Cipher project. The command has been renamed from `cipher` to `cipher-win` to avoid conflicts with Windows' built-in cipher.exe command.
 
 <p align="center">
 <a href="LICENSE"><img src="https://img.shields.io/badge/License-Elastic%202.0-blue.svg" alt="License" /></a>
@@ -48,6 +50,9 @@ npm install -g @byterover/cipher
 
 # Or install locally in your project
 npm install @byterover/cipher
+
+# Use cipher-win command instead of cipher
+cipher-win --help
 ```
 
 ### Docker
@@ -90,19 +95,19 @@ pnpm i && pnpm run build && npm link
 
 ```bash
 # Interactive mode
-cipher
+cipher-win
 
 # One-shot command
-cipher "Add this to memory as common causes of 'CORS error' in local dev with Vite + Express."
+cipher-win "Add this to memory as common causes of 'CORS error' in local dev with Vite + Express."
 
 # API server mode
-cipher --mode api
+cipher-win --mode api
 
 # MCP server mode
-cipher --mode mcp
+cipher-win --mode mcp
 
 # Web UI mode
-cipher --mode ui
+cipher-win --mode ui
 ```
 
 > **⚠️ Note:** When running MCP mode in terminal/shell, export all environment variables as Cipher won't read from `.env` file.
