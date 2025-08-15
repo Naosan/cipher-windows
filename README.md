@@ -1,5 +1,7 @@
 # Cipher (Windows Version)
 
+> 🪟 **Windows-compatible fork** of [campfirein/cipher](https://github.com/campfirein/cipher) - Command renamed to `cipher-win` to avoid conflicts with Windows cipher.exe
+
 <div align="center">
 
 <img src="./assets/cipher-logo.png" alt="Cipher Agent Logo" width="400" />
