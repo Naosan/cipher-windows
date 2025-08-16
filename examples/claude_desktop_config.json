@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "cipher-memory": {
+      "command": "cipher-win",
+      "args": [
+        "--mode", "mcp",
+        "--mcp-transport-type", "stdio"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "your-openai-api-key-here",
+        "MCP_SERVER_MODE": "aggregator"
+      }
+    }
+  }
+}
