@@ -67,18 +67,17 @@ For detailed implementation notes, see [CLAUDE_WINDOWS.md](./CLAUDE_WINDOWS.md).
 
 ## Quick Start 🚀
 
-### NPM Package (Recommended for Most Users)
+### Windows Fork Installation (GitHub)
 
 ```bash
-# Install globally
-npm install -g @byterover/cipher
-
-# Or install locally in your project
-npm install @byterover/cipher
+# Install globally from GitHub fork
+npm install -g github:Naosan/cipher-windows
 
 # Use cipher-win command instead of cipher
 cipher-win --help
 ```
+
+> **Note**: This Windows fork is not published to npm. Install directly from GitHub using the command above.
 
 ### Docker
 
@@ -255,7 +254,7 @@ To use Cipher as an MCP server in your MCP client configuration:
 	"mcpServers": {
 		"cipher": {
 			"type": "stdio",
-			"command": "cipher",
+			"command": "cipher-win",
 			"args": ["--mode", "mcp"],
 			"env": {
 				"MCP_SERVER_MODE": "aggregator",
