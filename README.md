@@ -42,6 +42,29 @@ Built by [Byterover team](https://byterover.dev/)
 - 🧬 Dual Memory Layer that captures System 1 (Programming Concepts & Business Logic & Past Interaction) and System 2 (reasoning steps of the model when generating code).
 - ⚙️ Install on your IDE with zero configuration needed.
 
+## 🔧 Windows-Specific Changes
+
+This fork makes **minimal changes** to the original Cipher project to ensure Windows compatibility:
+
+### What Changed
+- **Command name only**: `cipher` → `cipher-win` (single line change in package.json)
+- **README examples**: Updated all CLI examples to use `cipher-win`
+- **Documentation**: Added Windows-specific setup guides
+
+### What Stayed the Same
+- ✅ **All source code** - Zero code changes
+- ✅ **All features** - Full functionality preserved  
+- ✅ **All dependencies** - Identical to upstream
+- ✅ **All build processes** - No modifications
+- ✅ **Easy upstream tracking** - Simple to merge future updates
+
+### Why This Approach?
+- **Problem**: Windows has built-in `cipher.exe` (EFS encryption tool)
+- **Solution**: Rename command to avoid conflicts
+- **Benefit**: Minimal maintenance overhead, easy upstream synchronization
+
+For detailed implementation notes, see [CLAUDE_WINDOWS.md](./CLAUDE_WINDOWS.md).
+
 ## Quick Start 🚀
 
 ### NPM Package (Recommended for Most Users)
