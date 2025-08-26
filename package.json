@@ -31,7 +31,7 @@
 		"memAgent/cipher.yml"
 	],
 	"scripts": {
-		"clean": "rm -rf dist",
+                "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
 		"prebuild": "pnpm run clean",
 		"build": "pnpm run build-ui && tsup && pnpm run copy-ui-dist",
 		"build:no-ui": "tsup && pnpm run copy-ui-dist",
@@ -83,9 +83,9 @@
 		"eslint": "^9.29.0",
 		"eslint-config-prettier": "^10.1.5",
 		"pg": "^8.16.3",
-		"prettier": "^3.5.3",
-		"recheck": "^4.5.0",
-		"supertest": "^7.1.4",
+                "prettier": "^3.5.3",
+                "recheck": "^4.5.0",
+                "supertest": "^7.1.4",
 		"ts-node": "^10.9.2",
 		"tsup": "^8.5.0",
 		"tsx": "^4.19.2",
