@@ -88,9 +88,13 @@ async function copyUIBuild(): Promise<void> {
 			throw new Error('Standalone server.js not found after copying');
 		}
 
-		// Ensure standalone server is executable
-		await fs.chmod(standaloneServerPath, '755');
-		console.log('✅ Standalone server configured');
+                // Ensure standalone server is executable (skip on Windows)
+                if (process.platform !== 'win32') {
+                        await fs.chmod(standaloneServerPath, 0o755);
+                        console.log('✅ Standalone server configured');
+                } else {
+                        console.log('⚠️  Skipping chmod on Windows');
+                }
 
 		// Create a simple package.json for the distribution if it doesn't exist
 		const distPackageJsonPath = path.join(targetDir, 'package.json');
