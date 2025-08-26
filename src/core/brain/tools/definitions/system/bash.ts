@@ -15,6 +15,18 @@ import {
 import { logger } from '../../../../logger/index.js';
 
 /**
+ * Determine the appropriate default shell based on the platform.
+ *
+ * On Windows prefer PowerShell but fall back to %ComSpec% if defined.
+ */
+function getDefaultShell(): string {
+        if (process.platform === 'win32') {
+                return process.env.ComSpec || 'powershell.exe';
+        }
+        return '/bin/bash';
+}
+
+/**
  * Command execution result structure
  */
 interface CommandResult {
@@ -64,13 +76,18 @@ class BashSession extends EventEmitter {
 			return;
 		}
 
-		try {
-			// Start bash process with non-interactive mode to avoid prompt issues
-			this.process = spawn('/bin/bash', [], {
-				cwd: this.currentWorkingDir,
-				stdio: ['pipe', 'pipe', 'pipe'],
-				env: { ...process.env },
-			});
+                try {
+                        // Start shell process with non-interactive mode to avoid prompt issues
+                        const shell = getDefaultShell();
+                        const args = shell.toLowerCase().includes('powershell')
+                                ? ['-NoLogo', '-NoProfile']
+                                : [];
+
+                        this.process = spawn(shell, args, {
+                                cwd: this.currentWorkingDir,
+                                stdio: ['pipe', 'pipe', 'pipe'],
+                                env: { ...process.env },
+                        });
 
 			this.isRunning = true;
 
@@ -126,10 +143,13 @@ class BashSession extends EventEmitter {
 				reject(new Error(`Command timeout after ${timeout}ms`));
 			}, timeout);
 
-			// Send command with a unique marker to detect completion
-			const marker = `CMD_COMPLETE_${Date.now()}`;
-			const fullCommand = `${command}; echo "${marker}"; echo "EXIT_CODE:$?" `;
-			this.process!.stdin?.write(`${fullCommand}\n`);
+                        // Send command with a unique marker to detect completion
+                        const marker = `CMD_COMPLETE_${Date.now()}`;
+                        const fullCommand =
+                                process.platform === 'win32'
+                                        ? `${command}; Write-Output "${marker}"; Write-Output "EXIT_CODE:$LASTEXITCODE"`
+                                        : `${command}; echo "${marker}"; echo "EXIT_CODE:$?" `;
+                        this.process!.stdin?.write(`${fullCommand}\n`);
 
 			// Wait for command completion
 			const checkCompletion = () => {
@@ -240,7 +260,7 @@ class BashSessionManager {
  * Execute a bash command with optional session persistence
  */
 async function executeBashCommand(options: CommandOptions): Promise<CommandResult> {
-	const { command, timeout = 30000, workingDir, environment, shell = '/bin/bash' } = options;
+        const { command, timeout = 30000, workingDir, environment, shell = getDefaultShell() } = options;
 
 	logger.debug('Executing bash command', { command, timeout, workingDir });
 
@@ -254,11 +274,18 @@ async function executeBashCommand(options: CommandOptions): Promise<CommandResul
 		let output = '';
 		let error = '';
 
-		const childProcess = spawn(shell, ['-c', command], {
-			cwd: workingDir || process.cwd(),
-			env: { ...process.env, ...environment },
-			stdio: ['pipe', 'pipe', 'pipe'],
-		});
+                const isWin = process.platform === 'win32';
+                const args = isWin
+                        ? shell.toLowerCase().includes('powershell')
+                                ? ['-NoLogo', '-NonInteractive', '-Command', command]
+                                : ['/d', '/s', '/c', command]
+                        : ['-c', command];
+
+                const childProcess = spawn(shell, args, {
+                        cwd: workingDir || process.cwd(),
+                        env: { ...process.env, ...environment },
+                        stdio: ['pipe', 'pipe', 'pipe'],
+                });
 
 		childProcess.stdout?.on('data', (data: Buffer) => {
 			output += data.toString();
@@ -418,5 +445,5 @@ export const bashTool: InternalTool = {
 	version: '1.0.0',
 };
 
-// Export session manager for cleanup
-export { BashSessionManager };
+// Export session manager and helpers for cleanup and testing
+export { BashSessionManager, getDefaultShell };
