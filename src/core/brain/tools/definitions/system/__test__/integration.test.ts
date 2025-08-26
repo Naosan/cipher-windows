@@ -9,6 +9,8 @@ import { InternalToolManager } from '../../../manager.js';
 import { getAllToolDefinitions } from '../../index.js';
 import { BashSessionManager } from '../bash.js';
 
+const isWindows = process.platform === 'win32';
+
 describe('Bash Tool Integration', () => {
 	let toolManager: InternalToolManager;
 	let sessionManager: BashSessionManager;
@@ -48,11 +50,14 @@ describe('Bash Tool Integration', () => {
 		toolManager.registerTool(bashTool);
 
 		// Execute through manager
-		const result = await toolManager.executeTool(
-			'cipher_bash',
-			{ command: 'echo "Hello from integrated test"' },
-			{ sessionId: 'integration-test', userId: 'test-user' }
-		);
+                const helloCmd = isWindows
+                        ? 'Write-Output "Hello from integrated test"'
+                        : 'echo "Hello from integrated test"';
+                const result = await toolManager.executeTool(
+                        'cipher_bash',
+                        { command: helloCmd },
+                        { sessionId: 'integration-test', userId: 'test-user' }
+                );
 
 		expect(result.isError).toBe(false);
 		expect(result.content).toContain('Hello from integrated test');
@@ -67,19 +72,25 @@ describe('Bash Tool Integration', () => {
 		toolManager.registerTool(bashTool);
 
 		// Set environment variable
-		const result1 = await toolManager.executeTool(
-			'cipher_bash',
-			{ command: 'export INTEGRATION_TEST="success"', persistent: true },
-			{ sessionId: 'persistent-integration', userId: 'test-user' }
-		);
+                const setCmd = isWindows
+                        ? '$env:INTEGRATION_TEST="success"'
+                        : 'export INTEGRATION_TEST="success"';
+                const result1 = await toolManager.executeTool(
+                        'cipher_bash',
+                        { command: setCmd, persistent: true },
+                        { sessionId: 'persistent-integration', userId: 'test-user' }
+                );
 		expect(result1.isError).toBe(false);
 
 		// Check if variable persists
-		const result2 = await toolManager.executeTool(
-			'cipher_bash',
-			{ command: 'echo $INTEGRATION_TEST', persistent: true },
-			{ sessionId: 'persistent-integration', userId: 'test-user' }
-		);
+                const getCmd = isWindows
+                        ? 'Write-Output $env:INTEGRATION_TEST'
+                        : 'echo $INTEGRATION_TEST';
+                const result2 = await toolManager.executeTool(
+                        'cipher_bash',
+                        { command: getCmd, persistent: true },
+                        { sessionId: 'persistent-integration', userId: 'test-user' }
+                );
 		expect(result2.isError).toBe(false);
 		expect(result2.content).toContain('success');
 	});
@@ -92,8 +103,10 @@ describe('Bash Tool Integration', () => {
 		toolManager.registerTool(bashTool);
 
 		// Execute a few commands
-		await toolManager.executeTool('cipher_bash', { command: 'echo "test1"' });
-		await toolManager.executeTool('cipher_bash', { command: 'echo "test2"' });
+                const statCmd1 = isWindows ? 'Write-Output "test1"' : 'echo "test1"';
+                const statCmd2 = isWindows ? 'Write-Output "test2"' : 'echo "test2"';
+                await toolManager.executeTool('cipher_bash', { command: statCmd1 });
+                await toolManager.executeTool('cipher_bash', { command: statCmd2 });
 
 		// Check statistics
 		const stats = toolManager.getToolStats('cipher_bash');
@@ -138,15 +151,18 @@ describe('Bash Tool Integration', () => {
 		};
 
 		// Execute with services context
-		const result = await toolManager.executeTool(
-			'cipher_bash',
-			{ command: 'echo "Service integration test"' },
-			{
-				sessionId: 'service-test',
-				userId: 'test-user',
-				services: mockServices,
-			}
-		);
+                const serviceCmd = isWindows
+                        ? 'Write-Output "Service integration test"'
+                        : 'echo "Service integration test"';
+                const result = await toolManager.executeTool(
+                        'cipher_bash',
+                        { command: serviceCmd },
+                        {
+                                sessionId: 'service-test',
+                                userId: 'test-user',
+                                services: mockServices,
+                        }
+                );
 
 		expect(result.isError).toBe(false);
 		expect(result.content).toContain('Service integration test');

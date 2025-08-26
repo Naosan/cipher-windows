@@ -5,8 +5,10 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { bashTool, BashSessionManager } from '../bash.js';
+import { bashTool, BashSessionManager, getDefaultShell } from '../bash.js';
 import type { InternalToolContext } from '../../../types.js';
+
+const isWindows = process.platform === 'win32';
 
 describe('Bash Tool', () => {
 	let sessionManager: BashSessionManager;
@@ -46,7 +48,10 @@ describe('Bash Tool', () => {
 				metadata: {},
 			};
 
-			const result = await bashTool.handler({ command: 'echo "Hello World"' }, context);
+                        const cmd = isWindows
+                                ? 'Write-Output "Hello World"'
+                                : 'echo "Hello World"';
+                        const result = await bashTool.handler({ command: cmd }, context);
 
 			expect(result.isError).toBe(false);
 			expect(result.content).toContain('Hello World');
@@ -62,7 +67,7 @@ describe('Bash Tool', () => {
 				metadata: {},
 			};
 
-			const result = await bashTool.handler({ command: 'exit 1' }, context);
+                        const result = await bashTool.handler({ command: 'exit 1' }, context);
 
 			expect(result.isError).toBe(true);
 			expect(result.content).toContain('Exit Code: 1');
@@ -78,7 +83,8 @@ describe('Bash Tool', () => {
 			};
 
 			// This should timeout quickly
-			const result = await bashTool.handler({ command: 'sleep 5', timeout: 1000 }, context);
+                        const sleepCmd = isWindows ? 'Start-Sleep -Seconds 5' : 'sleep 5';
+                        const result = await bashTool.handler({ command: sleepCmd, timeout: 1000 }, context);
 
 			expect(result.isError).toBe(true);
 			expect(result.content).toContain('timeout');
@@ -93,10 +99,12 @@ describe('Bash Tool', () => {
 				metadata: {},
 			};
 
-			const result = await bashTool.handler({ command: 'pwd', workingDir: '/tmp' }, context);
+                        const dir = isWindows ? 'C:\\' : '/tmp';
+                        const pwdCmd = isWindows ? 'Get-Location' : 'pwd';
+                        const result = await bashTool.handler({ command: pwdCmd, workingDir: dir }, context);
 
-			expect(result.isError).toBe(false);
-			expect(result.content).toContain('/tmp');
+                        expect(result.isError).toBe(false);
+                        expect(result.content).toContain(dir);
 		});
 	});
 
@@ -111,17 +119,23 @@ describe('Bash Tool', () => {
 			};
 
 			// Set a variable in first command
-			const result1 = await bashTool.handler(
-				{ command: 'export TEST_VAR="hello"', persistent: true },
-				context
-			);
+                        const setCmd = isWindows
+                                ? '$env:TEST_VAR="hello"'
+                                : 'export TEST_VAR="hello"';
+                        const result1 = await bashTool.handler(
+                                { command: setCmd, persistent: true },
+                                context
+                        );
 			expect(result1.isError).toBe(false);
 
 			// Check if variable persists in second command
-			const result2 = await bashTool.handler(
-				{ command: 'echo $TEST_VAR', persistent: true },
-				context
-			);
+                        const getCmd = isWindows
+                                ? 'Write-Output $env:TEST_VAR'
+                                : 'echo $TEST_VAR';
+                        const result2 = await bashTool.handler(
+                                { command: getCmd, persistent: true },
+                                context
+                        );
 			expect(result2.isError).toBe(false);
 			expect(result2.content).toContain('hello');
 		});
@@ -136,10 +150,13 @@ describe('Bash Tool', () => {
 			};
 
 			// Use custom session ID
-			const result = await bashTool.handler(
-				{ command: 'echo "custom session"', persistent: true, sessionId: 'custom-session' },
-				context
-			);
+                        const echoCmd = isWindows
+                                ? 'Write-Output "custom session"'
+                                : 'echo "custom session"';
+                        const result = await bashTool.handler(
+                                { command: echoCmd, persistent: true, sessionId: 'custom-session' },
+                                context
+                        );
 
 			expect(result.isError).toBe(false);
 			expect(result.content).toContain('custom session');
@@ -207,9 +224,9 @@ describe('Bash Tool', () => {
 			expect(session.isActive()).toBe(false);
 		});
 
-		it('should close all sessions', async () => {
-			const session1 = await sessionManager.getSession('close-all-1');
-			const session2 = await sessionManager.getSession('close-all-2');
+        it('should close all sessions', async () => {
+                const session1 = await sessionManager.getSession('close-all-1');
+                const session2 = await sessionManager.getSession('close-all-2');
 
 			expect(session1.isActive()).toBe(true);
 			expect(session2.isActive()).toBe(true);
@@ -217,7 +234,23 @@ describe('Bash Tool', () => {
 			await sessionManager.closeAllSessions();
 
 			expect(session1.isActive()).toBe(false);
-			expect(session2.isActive()).toBe(false);
-		});
-	});
+                expect(session2.isActive()).toBe(false);
+        });
+        });
+
+        describe('Windows Shell Selection', () => {
+                it('uses PowerShell by default on win32', () => {
+                        const originalPlatform = process.platform;
+                        const originalComSpec = process.env.ComSpec;
+                        Object.defineProperty(process, 'platform', { value: 'win32' });
+                        delete process.env.ComSpec;
+
+                        expect(getDefaultShell()).toBe('powershell.exe');
+
+                        Object.defineProperty(process, 'platform', { value: originalPlatform });
+                        if (originalComSpec) {
+                                process.env.ComSpec = originalComSpec;
+                        }
+                });
+        });
 });
