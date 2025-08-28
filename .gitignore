@@ -57,7 +57,8 @@ CONTRIBUTING.md
 *.py
 v10/
 .mcp.json
-CLAUDE.md
+# CLAUDE.md should be included in the repository
+# CLAUDE.md
 env.txt
 env.example.txt
 :memory:/
@@ -67,6 +68,22 @@ env.example.txt
 chroma-data/
 qdrant-data/
 volumes/
+
+# Serena tool files
+.serena/
+
+# Security and credentials
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+
+# Backup files
+*.bak
+*.backup
+*.old
 
 # Windows specific
 Thumbs.db
@@ -106,3 +123,27 @@ test-*.ts
 *.dll
 *.so
 *.dylib
+
+# Cipher-win specific files
+.cipher-win.env
+cipher-mcp.log
+.cipher/
+cipher-logs/
+memory-store/
+knowledge-graph-data/
+workspace-data/
+
+# Database files (SQLite, etc.)
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# MCP specific logs and data
+*-mcp.log
+mcp-*.log
+
+# Memory and cache directories  
+temp-*/
+cache-*/
+.cache/

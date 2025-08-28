@@ -43,13 +43,14 @@ function resolveEnvPath(): string {
 		return '.env';
 	}
 
-	// Try relative to project root (where package.json is located)
-	const currentFileUrl = import.meta.url;
-	const currentFilePath = fileURLToPath(currentFileUrl);
-	const projectRoot = path.resolve(path.dirname(currentFilePath), '../..');
-	const envPath = path.resolve(projectRoot, '.env');
+	// Try user home directory
+	const homeEnvPath = path.join(os.homedir(), '.cipher-win.env');
+	if (existsSync(homeEnvPath)) {
+		return homeEnvPath;
+	}
 
-	return envPath;
+	// Return current directory path as default (will be created if needed)
+	return '.env';
 }
 
 // ===== EARLY MCP MODE DETECTION AND LOG REDIRECTION =====
@@ -75,7 +76,7 @@ detectAndRedirectMcpLogs();
 const program = new Command();
 
 program
-	.name('cipher')
+	.name('cipher-win')
 	.description(
 		'Memory-powered AI agent framework with real-time WebSocket communication and MCP integration'
 	)
@@ -121,7 +122,7 @@ program
 program
 	.description(
 		'Cipher CLI allows you to interact with cipher memory agent.\n' +
-			'Run cipher in interactive mode with `cipher` or run a one-shot prompt with `cipher <prompt>`\n\n' +
+			'Run cipher-win in interactive mode with `cipher-win` or run a one-shot prompt with `cipher-win <prompt>`\n\n' +
 			'Available modes:\n' +
 			'  - cli: Interactive command-line interface (default)\n' +
 			'  - mcp: Model Context Protocol server mode\n' +
@@ -162,10 +163,10 @@ program
 	 * the agent's session management lifecycle and TTL settings.
 	 *
 	 * One-Shot Mode Behavior:
-	 * When prompt arguments are provided, cipher runs in headless mode:
+	 * When prompt arguments are provided, cipher-win runs in headless mode:
 	 * - Executes the prompt once and exits
 	 * - Works with all existing flags and options
-	 * - Example: cipher "help me debug this error"
+	 * - Example: cipher-win "help me debug this error"
 	 */
 	.action(async (prompt: string[] = []) => {
 		// Process prompt arguments for one-shot mode
@@ -175,10 +176,24 @@ program
 		const opts = program.opts();
 
 		// Check for .env file with proper path resolution (skip in MCP mode)
+		// Allow running without .env if environment variables are already set
 		if (opts.mode !== 'mcp') {
 			const envPath = resolveEnvPath();
-			if (!existsSync(envPath)) {
-				const errorMsg = `No .env file found at ${envPath}, copy .env.example to .env and fill in the values`;
+			const hasEnvFile = existsSync(envPath);
+			const hasRequiredEnvVars = env.OPENAI_API_KEY || env.ANTHROPIC_API_KEY || env.OPENROUTER_API_KEY || env.OLLAMA_BASE_URL;
+			
+			if (!hasEnvFile && !hasRequiredEnvVars) {
+				const homeEnvPath = path.join(os.homedir(), '.cipher-win.env');
+				const errorMsg = `No .env file found and no required environment variables set.\n\n` +
+					`Create a .env file at either:\n` +
+					`  - Current directory: .env\n` +
+					`  - Home directory: ${homeEnvPath}\n\n` +
+					`Or set environment variables directly:\n` +
+					`  OPENAI_API_KEY=your_openai_key\n` +
+					`  # OR\n` +
+					`  ANTHROPIC_API_KEY=your_anthropic_key\n` +
+					`  # OR\n` +
+					`  OLLAMA_BASE_URL=http://localhost:11434`;
 				logger.error(errorMsg);
 				process.exit(1);
 			}

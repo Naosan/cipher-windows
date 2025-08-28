@@ -31,7 +31,7 @@
 		"memAgent/cipher.yml"
 	],
 	"scripts": {
-		"clean": "rm -rf dist",
+		"clean": "node -e \"require('fs').rmSync('dist', {recursive: true, force: true})\"",
 		"prebuild": "pnpm run clean",
 		"build": "pnpm run build-ui && tsup && pnpm run copy-ui-dist",
 		"build:no-ui": "tsup && pnpm run copy-ui-dist",

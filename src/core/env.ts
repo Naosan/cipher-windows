@@ -1,5 +1,8 @@
 import { config } from 'dotenv';
 import { z } from 'zod';
+import { existsSync } from 'fs';
+import path from 'path';
+import os from 'os';
 
 // Load environment variables from .env file
 // Note: In MCP mode, the MCP host typically provides required environment variables
@@ -8,13 +11,37 @@ import { z } from 'zod';
 const isMcpMode =
 	process.argv.includes('--mode') && process.argv[process.argv.indexOf('--mode') + 1] === 'mcp';
 
+// Try to find .env file in multiple locations
+function findEnvFile(): string | undefined {
+	const locations = [
+		'.env',  // Current working directory
+		path.join(os.homedir(), '.cipher-win.env'),  // Home directory
+		path.join(process.cwd(), '.env'),  // Explicit current working directory
+	];
+	
+	for (const location of locations) {
+		if (existsSync(location)) {
+			return location;
+		}
+	}
+	return undefined;
+}
+
+const envFile = findEnvFile();
+
 if (isMcpMode) {
 	// In MCP mode, load .env file but with lower priority than MCP-provided env vars
 	// This allows .env to provide additional configuration while letting MCP config take precedence
-	config({ override: false });
+	if (envFile) {
+		config({ path: envFile, override: false });
+	}
 } else {
 	// Normal mode - load environment variables from .env file with override
-	config();
+	if (envFile) {
+		config({ path: envFile });
+	}
+	// Note: If no .env file is found, dotenv will silently continue
+	// Environment variables can still be set directly in the system
 }
 
 const envSchema = z.object({
