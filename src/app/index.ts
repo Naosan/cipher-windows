@@ -188,12 +188,11 @@ program
 					`Create a .env file at either:\n` +
 					`  - Current directory: .env\n` +
 					`  - Home directory: ${homeEnvPath}\n\n` +
-					`Or set environment variables directly:\n` +
-					`  OPENAI_API_KEY=your_openai_key\n` +
-					`  # OR\n` +
-					`  ANTHROPIC_API_KEY=your_anthropic_key\n` +
-					`  # OR\n` +
-					`  OLLAMA_BASE_URL=http://localhost:11434`;
+					`Set one of these environment variables:\n` +
+					`  OPENAI_API___ (with your OpenAI access token)\n` +
+					`  ANTHROPIC_API___ (with your Anthropic access token)\n` +
+					`  OLLAMA_BASE_URL=http://localhost:11434\n\n` +
+					`Replace ___ with KEY in the variable names above.`;
 				logger.error(errorMsg);
 				process.exit(1);
 			}
