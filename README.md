@@ -175,6 +175,52 @@ mcpServers:
 
 📖 **See [Configuration Guide](./docs/configuration.md)** for complete details.
 
+### Configuration File Priority 📁
+
+Cipher automatically searches for configuration files in the following order:
+
+1. **Project-specific**: `./memAgent/cipher.yml` (highest priority)
+2. **Global default**: Package installation directory
+
+This design allows for:
+- ✅ **Zero configuration**: Works out-of-the-box with global defaults  
+- ✅ **Project customization**: Override settings per project
+- ✅ **Team sharing**: Commit project config for consistent team settings
+
+<details>
+<summary>Creating Project-Specific Configuration</summary>
+
+```bash
+# Create project-specific configuration
+mkdir memAgent
+cp ~/.npm/node_modules/@byterover/cipher-windows/memAgent/cipher.yml memAgent/
+
+# Or copy from package installation (Windows)  
+# cp "%APPDATA%\npm\node_modules\@byterover\cipher-windows\memAgent\cipher.yml" memAgent\
+
+# Edit for your project
+nano memAgent/cipher.yml
+```
+
+**Example project-specific settings**:
+```yaml
+llm:
+  provider: anthropic       # Different provider per project
+  model: claude-3-5-sonnet  # Project-optimized model  
+  apiKey: $ANTHROPIC_API_KEY
+  maxIterations: 20         # Project-specific limits
+
+mcpServers:
+  project-tools:           # Project-specific MCP servers
+    type: stdio
+    command: node  
+    args: ['./tools/mcp-server.js']
+```
+
+💡 **Tip**: Commit `memAgent/cipher.yml` to ensure consistent settings across your team.
+
+</details>
+
 ### Environment Variables 🔐
 
 Create a `.env` file in your project root with these essential variables:
