@@ -14,6 +14,9 @@ import {
 } from '../../types.js';
 import { logger } from '../../../../logger/index.js';
 
+const isWindows = process.platform === 'win32';
+const defaultShell = isWindows ? process.env.ComSpec || 'powershell.exe' : '/bin/bash';
+
 /**
  * Command execution result structure
  */
@@ -64,13 +67,13 @@ class BashSession extends EventEmitter {
 			return;
 		}
 
-		try {
-			// Start bash process with non-interactive mode to avoid prompt issues
-			this.process = spawn('/bin/bash', [], {
-				cwd: this.currentWorkingDir,
-				stdio: ['pipe', 'pipe', 'pipe'],
-				env: { ...process.env },
-			});
+                try {
+                        // Start shell process with non-interactive mode to avoid prompt issues
+                        this.process = spawn(defaultShell, [], {
+                                cwd: this.currentWorkingDir,
+                                stdio: ['pipe', 'pipe', 'pipe'],
+                                env: { ...process.env },
+                        });
 
 			this.isRunning = true;
 
@@ -240,7 +243,13 @@ class BashSessionManager {
  * Execute a bash command with optional session persistence
  */
 async function executeBashCommand(options: CommandOptions): Promise<CommandResult> {
-	const { command, timeout = 30000, workingDir, environment, shell = '/bin/bash' } = options;
+        const {
+                command,
+                timeout = 30000,
+                workingDir,
+                environment,
+                shell = defaultShell,
+        } = options;
 
 	logger.debug('Executing bash command', { command, timeout, workingDir });
 
@@ -254,11 +263,16 @@ async function executeBashCommand(options: CommandOptions): Promise<CommandResul
 		let output = '';
 		let error = '';
 
-		const childProcess = spawn(shell, ['-c', command], {
-			cwd: workingDir || process.cwd(),
-			env: { ...process.env, ...environment },
-			stdio: ['pipe', 'pipe', 'pipe'],
-		});
+                const shellArgs = isWindows
+                        ? shell.toLowerCase().includes('powershell')
+                                ? ['-Command', command]
+                                : ['/c', command]
+                        : ['-c', command];
+                const childProcess = spawn(shell, shellArgs, {
+                        cwd: workingDir || process.cwd(),
+                        env: { ...process.env, ...environment },
+                        stdio: ['pipe', 'pipe', 'pipe'],
+                });
 
 		childProcess.stdout?.on('data', (data: Buffer) => {
 			output += data.toString();
