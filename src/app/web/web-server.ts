@@ -11,6 +11,14 @@ export interface WebServerConfig {
 	wsUrl?: string;
 }
 
+export function isCompiledPath(
+        filePath: string,
+        pathModule: typeof path = path
+): boolean {
+        const normalized = pathModule.normalize(filePath);
+        return normalized.includes(`${pathModule.sep}dist${pathModule.sep}`);
+}
+
 export class WebServerManager {
 	private config: WebServerConfig;
 	private process: ChildProcess | null = null;
@@ -22,8 +30,8 @@ export class WebServerManager {
 		const currentFileUrl = import.meta.url;
 		const currentFilePath = fileURLToPath(currentFileUrl);
 
-		// Check if we're running from dist (compiled) or src (development)
-		const isCompiledVersion = currentFilePath.includes('/dist/');
+                // Check if we're running from dist (compiled) or src (development)
+                const isCompiledVersion = isCompiledPath(currentFilePath);
 
 		if (isCompiledVersion) {
 			// When running from dist/src/app/index.cjs, UI is at dist/src/app/ui
