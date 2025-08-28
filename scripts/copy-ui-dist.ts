@@ -18,7 +18,9 @@ async function copyUIBuild(): Promise<void> {
 		// Check if UI build exists - if not, skip UI copy (for build:no-ui)
 		const standalonePath = path.join(sourceUIDir, '.next', 'standalone');
 		if (!fs.existsSync(standalonePath)) {
-			console.log('⚠️  UI build not found, skipping UI copy (this is expected when using build:no-ui)');
+			console.log(
+				'⚠️  UI build not found, skipping UI copy (this is expected when using build:no-ui)'
+			);
 			return;
 		}
 
@@ -35,7 +37,9 @@ async function copyUIBuild(): Promise<void> {
 
 		// Validate that the source build exists
 		if (!fs.existsSync(standalonePath)) {
-			throw new Error('Next.js standalone build not found. Run `pnpm run build` in the UI directory first.');
+			throw new Error(
+				'Next.js standalone build not found. Run `pnpm run build` in the UI directory first.'
+			);
 		}
 
 		// Copy only the essential files for production
@@ -43,7 +47,7 @@ async function copyUIBuild(): Promise<void> {
 			{ src: '.next/standalone', dest: '.next/standalone', required: true },
 			{ src: '.next/static', dest: '.next/static', required: true },
 			{ src: 'public', dest: 'public', required: false },
-			{ src: 'package.json', dest: 'package.json', required: false }
+			{ src: 'package.json', dest: 'package.json', required: false },
 		];
 
 		for (const file of filesToCopy) {
@@ -53,7 +57,7 @@ async function copyUIBuild(): Promise<void> {
 			if (fs.existsSync(srcPath)) {
 				await fs.copy(srcPath, destPath, {
 					overwrite: true,
-					errorOnExist: false
+					errorOnExist: false,
 				});
 				console.log(`✅ Copied ${file.src}`);
 			} else if (file.required) {
@@ -88,9 +92,13 @@ async function copyUIBuild(): Promise<void> {
 			throw new Error('Standalone server.js not found after copying');
 		}
 
-		// Ensure standalone server is executable
-		await fs.chmod(standaloneServerPath, '755');
-		console.log('✅ Standalone server configured');
+		// Ensure standalone server is executable on non-Windows platforms
+		if (process.platform !== 'win32') {
+			await fs.chmod(standaloneServerPath, '755');
+			console.log('✅ Standalone server configured');
+		} else {
+			console.log('ℹ️  Skipping chmod on Windows; permissions already set');
+		}
 
 		// Create a simple package.json for the distribution if it doesn't exist
 		const distPackageJsonPath = path.join(targetDir, 'package.json');
@@ -100,8 +108,8 @@ async function copyUIBuild(): Promise<void> {
 				version: '0.1.0',
 				private: true,
 				scripts: {
-					start: 'node .next/standalone/server.js'
-				}
+					start: 'node .next/standalone/server.js',
+				},
 			};
 			await fs.writeFile(distPackageJsonPath, JSON.stringify(distPackageJson, null, 2));
 			console.log('✅ Created distribution package.json');
@@ -117,4 +125,4 @@ async function copyUIBuild(): Promise<void> {
 }
 
 // Execute the copy function
-copyUIBuild(); 
+copyUIBuild();
