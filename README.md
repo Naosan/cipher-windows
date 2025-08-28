@@ -249,6 +249,11 @@ VECTOR_STORE_API_KEY=your-qdrant-api-key
 # ====================
 CIPHER_PG_URL=postgresql://user:pass@localhost:5432/cipher_db
 
+# Session storage directory (customize where session history is stored)
+CIPHER_SESSION_DIR=~/.cipher-win/sessions  # User home directory
+# CIPHER_SESSION_DIR=./.cache/cipher       # Project cache directory
+# If not set, defaults to ./data directory
+
 # ====================
 # Workspace Memory (Optional)
 # ====================

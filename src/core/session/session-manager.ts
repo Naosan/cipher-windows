@@ -937,10 +937,18 @@ export class SessionManager {
 		try {
 			// Try SQLite as fallback
 			logger.debug('SessionManager: Attempting to initialize SQLite storage...');
+			
+			// Use environment variable for session directory if specified
+			const sessionPath = process.env.CIPHER_SESSION_DIR || 
+			                   process.env.STORAGE_DATABASE_PATH || 
+			                   './data';
+			
+			logger.debug(`SessionManager: Using session directory: ${sessionPath}`);
+			
 			this.storageManager = new StorageManager({
 				database: {
 					type: 'sqlite',
-					path: './data',
+					path: sessionPath,
 					database: 'cipher-sessions.db',
 				},
 				cache: {
