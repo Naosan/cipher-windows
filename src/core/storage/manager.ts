@@ -271,18 +271,17 @@ export class StorageManager {
 					connectionTime: `${this.databaseMetadata.connectionTime}ms`,
 				});
 			} catch (err) {
-				this.logger.error('Failed to connect to database backend', {
-					error: err instanceof Error ? err.message : String(err),
-					type: this.config.database.type,
-					stack: err instanceof Error ? err.stack : undefined,
-				});
-
-				// CRITICAL FIX: Enhanced fallback logic with retry mechanism
+				// WINDOWS FORK FIX: Reduce log level for expected fallback scenarios
+				// Only log as error if fallback is not available
 				if (this.config.database.type !== BACKEND_TYPES.IN_MEMORY) {
+					this.logger.debug('Failed to connect to SQLite database', {
+						error: err instanceof Error ? err.message : String(err),
+						type: this.config.database.type,
+					});
+
 					this.logger.warn(
 						`${LOG_PREFIXES.DATABASE} Primary backend failed, attempting fallback to in-memory`,
 						{
-							error: err instanceof Error ? err.message : String(err),
 							originalType: this.config.database.type,
 						}
 					);
@@ -313,7 +312,12 @@ export class StorageManager {
 						);
 					}
 				} else {
-					// Already using in-memory, can't fallback further
+					// Already using in-memory, can't fallback further - this is a real error
+					this.logger.error('Failed to connect to database backend', {
+						error: err instanceof Error ? err.message : String(err),
+						type: this.config.database.type,
+						stack: err instanceof Error ? err.stack : undefined,
+					});
 					this.logger.error(
 						`${LOG_PREFIXES.DATABASE} In-memory backend failed, no fallback available`
 					);
