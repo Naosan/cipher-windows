@@ -57,8 +57,7 @@ CONTRIBUTING.md
 *.py
 v10/
 .mcp.json
-# CLAUDE.md should be included in the repository
-# CLAUDE.md
+CLAUDE.md
 env.txt
 env.example.txt
 :memory:/
