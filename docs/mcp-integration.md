@@ -439,6 +439,7 @@ npx @modelcontextprotocol/inspector cipher --mode mcp
 
 ## Related Documentation
 
+- [MCP Setup (Windows)](./MCP_SETUP_GUIDE_WINDOWS.md) - Windows-specific setup for MCP
 - [CLI Reference](./cli-reference.md) - Command-line options and usage
 - [Configuration](./configuration.md) - Main configuration guide
 - [Examples](./examples.md) - Real-world integration examples

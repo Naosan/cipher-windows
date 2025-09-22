@@ -367,6 +367,7 @@ For detailed configuration instructions, see the [CLI Coding Agents guide](./exa
 | [Chat History](./docs/chat-history.md)                       | PostgreSQL, SQLite session storage and management                                 |
 | [CLI Reference](./docs/cli-reference.md)                     | Complete command-line interface documentation                                     |
 | [MCP Integration](./docs/mcp-integration.md)                 | Advanced MCP server setup, aggregator mode, and IDE integrations                  |
+| [MCP Setup (Windows)](./docs/MCP_SETUP_GUIDE_WINDOWS.md)     | Windows-specific instructions for running Cipher as an MCP server                 |
 | [Workspace Memory](./docs/workspace-memory.md)               | Team-aware memory system for collaborative development                            |
 | [Examples](./docs/examples.md)                               | Real-world integration examples and use cases                                     |
 
