@@ -11,11 +11,22 @@ import { MemAgent } from '@core/brain/memAgent/agent.js';
 import { logger } from '@core/logger/index.js';
 import { AgentCardSchema } from '@core/brain/memAgent/config.js';
 import { z } from 'zod';
-import * as fs from 'fs';
-import * as path from 'path';
 import type { AggregatorConfig } from '@core/mcp/types.js';
 import { McpSseServer } from './mcp_sse_server.js';
 import { McpStreamableHttpServer } from './mcp_streamable_http_server.js';
+import { sanitizeSchemaForOpenAITools } from './schema-utils.js';
+import pkg from '../../../package.json' with { type: 'json' };
+
+const SERENA_COMPATIBLE_TOOL_NAMES = new Set([
+	'cipher_extract_and_operate_memory',
+	'cipher_memory_search',
+	'cipher_store_reasoning_memory',
+	'cipher_search_reasoning_patterns',
+	'cipher_extract_reasoning_steps',
+	'cipher_evaluate_reasoning',
+	'cipher_workspace_search',
+	'cipher_workspace_store',
+]);
 
 // Derive the AgentCard type from the schema
 export type AgentCard = z.infer<typeof AgentCardSchema>;
@@ -54,7 +65,7 @@ export async function initializeMcpServer(
 	const server = new Server(
 		{
 			name: agentCard.name || 'cipher',
-			version: agentCard.version || '1.0.0',
+			version: agentCard.version || pkg.version || '1.0.0',
 		},
 		{
 			capabilities: {
@@ -185,7 +196,8 @@ async function registerAggregatedTools(
 
 	// Check if ask_cipher tool should be exposed (env-gated for aggregator mode)
 	const { env } = await import('../../core/env.js');
-	const shouldExposeAskCipher = env.USE_ASK_CIPHER;
+	const serenaCompatEnabled = env.SERENA_COMPAT_MODE;
+	const shouldExposeAskCipher = serenaCompatEnabled ? false : env.USE_ASK_CIPHER;
 
 	// For backward compatibility, ensure ask_cipher is present if enabled
 	if (shouldExposeAskCipher && !mcpTools.find(t => t.name === 'ask_cipher')) {
@@ -211,13 +223,37 @@ async function registerAggregatedTools(
 		});
 	}
 
-	logger.info(
-		`[MCP Handler] Registering ${mcpTools.length} tools: ${mcpTools.map(t => t.name).join(', ')}`
-	);
+	let availableTools = mcpTools;
+
+	if (serenaCompatEnabled) {
+		const allowedNames = new Set(SERENA_COMPATIBLE_TOOL_NAMES);
+		if (shouldExposeAskCipher) {
+			allowedNames.add('ask_cipher');
+		}
+
+		availableTools = mcpTools
+			.filter(tool => allowedNames.has(tool.name))
+			.map(tool => ({
+				...tool,
+				inputSchema: sanitizeSchemaForOpenAITools(tool.inputSchema),
+			}));
+
+		logger.info(
+			`[MCP Handler] Serena compatibility mode enabled - exposing ${availableTools.length} tool(s): ${availableTools
+				.map(t => t.name)
+				.join(', ')}`
+		);
+	} else {
+		logger.info(
+			`[MCP Handler] Registering ${mcpTools.length} tools: ${mcpTools.map(t => t.name).join(', ')}`
+		);
+	}
+
+	const availableToolNames = new Set(availableTools.map(tool => tool.name));
 
 	// Register list tools handler
 	server.setRequestHandler(ListToolsRequestSchema, async () => {
-		return { tools: mcpTools };
+		return { tools: availableTools };
 	});
 
 	// Register call tool handler
@@ -226,8 +262,13 @@ async function registerAggregatedTools(
 		logger.info(`[MCP Handler] Tool called: ${name}`, { toolName: name, args });
 
 		// Check if ask_cipher tool should be handled (env-gated)
-		const { env } = await import('../../core/env.js');
-		const shouldExposeAskCipher = env.USE_ASK_CIPHER;
+	const { env } = await import('../../core/env.js');
+	const serenaCompatEnabled = env.SERENA_COMPAT_MODE;
+	const shouldExposeAskCipher = serenaCompatEnabled ? false : env.USE_ASK_CIPHER;
+
+		if (serenaCompatEnabled && !availableToolNames.has(name)) {
+			throw new Error(`Tool '${name}' not available in Serena compatibility mode`);
+		}
 
 		if (name === 'ask_cipher') {
 			if (!shouldExposeAskCipher) {
@@ -627,96 +668,4 @@ export async function createMcpTransport(
 				`Unsupported transport type: ${type}. Supported types are: stdio, sse, streamable-http`
 			);
 	}
-}
-
-/**
- * Redirect logs to file when running in stdio mode to prevent interference
- */
-export function redirectLogsForStdio(): void {
-	// Create a log file path
-	const logPath = './logs/mcp-server.log';
-
-	// Redirect logger to file FIRST - this prevents Winston from writing to stdout/stderr
-	logger.redirectToFile(logPath);
-
-	// Then redirect console methods as backup
-	// In stdio mode, we need to redirect console output to prevent interference with MCP protocol
-	// The MCP protocol uses stdio for communication, so any console.log will break the protocol
-
-	// Ensure logs directory exists
-	const logDir = path.dirname(logPath);
-
-	if (!fs.existsSync(logDir)) {
-		fs.mkdirSync(logDir, { recursive: true });
-	}
-
-	// Redirect console output to log file
-	const logStream = fs.createWriteStream(logPath, { flags: 'a' });
-
-	// Store original console methods for potential restoration
-	const originalConsole = {
-		log: console.log,
-		error: console.error,
-		warn: console.warn,
-		info: console.info,
-		debug: console.debug,
-		trace: console.trace,
-	};
-
-	// Override console methods to write to log file instead of stdout/stderr
-	console.log = (...args: any[]) => {
-		logStream.write(`[LOG] ${new Date().toISOString()} ${args.join(' ')}\n`);
-	};
-
-	console.error = (...args: any[]) => {
-		logStream.write(`[ERROR] ${new Date().toISOString()} ${args.join(' ')}\n`);
-	};
-
-	console.warn = (...args: any[]) => {
-		logStream.write(`[WARN] ${new Date().toISOString()} ${args.join(' ')}\n`);
-	};
-
-	console.info = (...args: any[]) => {
-		logStream.write(`[INFO] ${new Date().toISOString()} ${args.join(' ')}\n`);
-	};
-
-	console.debug = (...args: any[]) => {
-		logStream.write(`[DEBUG] ${new Date().toISOString()} ${args.join(' ')}\n`);
-	};
-
-	console.trace = (...args: any[]) => {
-		logStream.write(`[TRACE] ${new Date().toISOString()} ${args.join(' ')}\n`);
-	};
-
-	// Also capture process stdout/stderr writes to prevent any direct writes
-	const originalStdoutWrite = process.stdout.write;
-	const originalStderrWrite = process.stderr.write;
-
-	process.stdout.write = function (chunk: any, encoding?: any, callback?: any) {
-		// Only allow JSON-RPC messages to stdout (they start with '{' and contain '"jsonrpc"')
-		const chunkStr = chunk.toString();
-		if (chunkStr.trim().startsWith('{') && chunkStr.includes('"jsonrpc"')) {
-			return originalStdoutWrite.call(this, chunk, encoding, callback);
-		} else {
-			// Redirect non-JSON-RPC output to log file
-			logStream.write(`[STDOUT] ${new Date().toISOString()} ${chunkStr}`);
-			return true;
-		}
-	};
-
-	process.stderr.write = function (chunk: any, encoding?: any, callback?: any) {
-		// Allow stderr for MCP error reporting, but log it too
-		logStream.write(`[STDERR] ${new Date().toISOString()} ${chunk.toString()}`);
-		return originalStderrWrite.call(this, chunk, encoding, callback);
-	};
-
-	// Store original methods for potential restoration
-	(globalThis as any).__originalConsole = originalConsole;
-	(globalThis as any).__originalStdoutWrite = originalStdoutWrite;
-	(globalThis as any).__originalStderrWrite = originalStderrWrite;
-
-	// Log the redirection activation
-	logStream.write(
-		`[MCP-PROTECTION] ${new Date().toISOString()} Console and stdout/stderr redirection activated\n`
-	);
 }

@@ -70,6 +70,7 @@ volumes/
 
 # Serena tool files
 .serena/
+.codex/
 
 # Security and credentials
 *.pem

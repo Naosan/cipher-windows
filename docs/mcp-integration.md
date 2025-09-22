@@ -173,8 +173,11 @@ Exposes **all available tools** including memory tools and connected MCP server 
 | `USE_ASK_CIPHER` | Enable/disable ask_cipher tool (only LLM-requiring tool) | `true`, `false` | `false` |
 | `AGGREGATOR_CONFLICT_RESOLUTION` | Handle tool name conflicts | `prefix`, `first-wins`, `error` | `prefix` |
 | `AGGREGATOR_TIMEOUT` | Tool execution timeout (ms) | Number | `60000` |
+| `SERENA_COMPAT_MODE` | Restrict to memory-focused tools and sanitize schemas for Serena/Codex clients | `true`, `false` | `false` |
 
 **Note:** When `USE_ASK_CIPHER=false`, the `ask_cipher` tool is disabled, which is the only tool requiring LLM functionality. However, API keys are still required for embedding models used by memory and reasoning tools (`cipher_memory_search`, `cipher_extract_and_operate_memory`, etc.).
+
+**Serena compatibility:** Set `SERENA_COMPAT_MODE=true` to expose only memory-oriented tools (`cipher_extract_and_operate_memory`, `cipher_memory_search`, reasoning store/search, workspace memory) and to emit OpenAI-compatible JSON schemas. In this mode `ask_cipher` is automatically disabled regardless of `USE_ASK_CIPHER`, keeping the tool surface small and avoiding schema conflicts when Serena or other Codex-style clients connect to Cipher for long-term memory.
 
 ### Conflict Resolution Strategies
 

@@ -145,8 +145,9 @@ const envSchema = z.object({
 	CIPHER_USER_ID: z.string().optional(),
 	CIPHER_PROJECT_NAME: z.string().optional(),
 	CIPHER_WORKSPACE_MODE: z.enum(['shared', 'isolated']).default('isolated'),
-	// MCP Aggregator Configuration
-	USE_ASK_CIPHER: z.boolean().default(false),
+		// MCP Aggregator Configuration
+		USE_ASK_CIPHER: z.boolean().default(false),
+		SERENA_COMPAT_MODE: z.boolean().default(false),
 });
 
 type EnvSchema = z.infer<typeof envSchema>;
@@ -154,7 +155,7 @@ type EnvSchema = z.infer<typeof envSchema>;
 // Create a dynamic env object that always reads from process.env but provides type safety
 export const env: EnvSchema = new Proxy({} as EnvSchema, {
 	get(target, prop: string): any {
-		switch (prop) {
+			switch (prop) {
 			case 'NODE_ENV':
 				return process.env.NODE_ENV || 'development';
 			case 'CIPHER_LOG_LEVEL':
@@ -385,6 +386,8 @@ export const env: EnvSchema = new Proxy({} as EnvSchema, {
 				return process.env.CIPHER_WORKSPACE_MODE || 'isolated';
 			case 'USE_ASK_CIPHER':
 				return process.env.USE_ASK_CIPHER === 'true';
+			case 'SERENA_COMPAT_MODE':
+				return process.env.SERENA_COMPAT_MODE === 'true';
 			default:
 				return process.env[prop];
 		}

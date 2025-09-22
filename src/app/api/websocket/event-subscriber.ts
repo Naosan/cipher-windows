@@ -511,6 +511,8 @@ export class WebSocketEventSubscriber {
 			return;
 		}
 
+		this.subscriptionStats.totalEventsReceived++;
+
 		const response: WebSocketResponse = {
 			event: eventType,
 			data: data,
@@ -526,7 +528,6 @@ export class WebSocketEventSubscriber {
 		}
 
 		// Update stats
-		this.subscriptionStats.totalEventsBroadcast++;
 		this.subscriptionStats.lastEventTime = Date.now();
 		this.subscriptionStats.eventTypeStats.set(
 			eventType,
